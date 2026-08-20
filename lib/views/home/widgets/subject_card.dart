@@ -80,9 +80,9 @@ class SubjectCard extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                subjectId == 3
+                (subjectId == 1 || subjectId == 3)
                     ? '내부/외부평가 탑재'
-                    : (subjectId == 1 ? '내부평가 탑재' : '추후 확장 예정'),
+                    : '추후 확장 예정',
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: isAvailable ? Colors.greenAccent : theme.hintColor,
                   fontWeight: isAvailable ? FontWeight.bold : FontWeight.normal,

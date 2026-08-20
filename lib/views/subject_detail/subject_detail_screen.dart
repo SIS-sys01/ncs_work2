@@ -73,15 +73,15 @@ class SubjectDetailScreen extends ConsumerWidget {
               Expanded(
                 child: _EvaluationOptionCard(
                   title: '외부평가 연습 시작',
-                  subtitle: subject.id == 3
+                  subtitle: (subject.id == 1 || subject.id == 3)
                       ? '기술/서술/정의/개념/종류나열 핵심 주관식 (랜덤 10문항)'
                       : '외부평가 문제는 현재 미탑재 상태입니다.',
                   icon: Icons.menu_book_rounded,
-                  accentColor: subject.id == 3 ? Colors.indigoAccent : Colors.grey,
-                  isAvailable: subject.id == 3,
-                  badgeText: subject.id == 3 ? null : '미탑재',
+                  accentColor: (subject.id == 1 || subject.id == 3) ? Colors.indigoAccent : Colors.grey,
+                  isAvailable: subject.id == 1 || subject.id == 3,
+                  badgeText: (subject.id == 1 || subject.id == 3) ? null : '미탑재',
                   onTap: () {
-                    if (subject.id == 3) {
+                    if (subject.id == 1 || subject.id == 3) {
                       ref.read(quizProvider.notifier).loadQuestions(
                             subjectId: subject.id,
                             type: 'external',
