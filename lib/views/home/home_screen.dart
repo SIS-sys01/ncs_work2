@@ -2,11 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ncs_work/data/datasources/database_helper.dart';
 import 'package:ncs_work/data/models/subject_model.dart';
-import 'package:ncs_work/viewmodels/quiz_viewmodel.dart';
 import 'package:ncs_work/viewmodels/theme_viewmodel.dart';
 import 'package:ncs_work/views/home/widgets/comprehensive_evaluation_button.dart';
 import 'package:ncs_work/views/home/widgets/subject_card.dart';
-import 'package:ncs_work/views/quiz/quiz_screen.dart';
 import 'package:ncs_work/views/subject_detail/subject_detail_screen.dart';
 
 /// 메인 홈 화면 (ConsumerWidget)
@@ -67,21 +65,12 @@ class HomeScreen extends ConsumerWidget {
                         subjectId: subject.id,
                         subjectName: subject.name,
                         onTap: () {
-                          if (subject.id == 1 || subject.id == 3) {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => SubjectDetailScreen(subject: subject),
-                              ),
-                            );
-                          } else {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('${subject.name} 과목은 추후 업데이트 예정입니다.'),
-                                duration: const Duration(seconds: 2),
-                              ),
-                            );
-                          }
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => SubjectDetailScreen(subject: subject),
+                            ),
+                          );
                         },
                       );
                     },
@@ -89,11 +78,10 @@ class HomeScreen extends ConsumerWidget {
                 ),
                 ComprehensiveEvaluationButton(
                   onPressed: () {
-                    ref.read(quizProvider.notifier).loadRandomQuestions();
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const QuizScreen(title: '전 과목 통합 종합평가'),
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('각 과목 카드를 터치하여 해당 과목의 PDF 문제지를 확인하세요!'),
+                        duration: Duration(seconds: 2),
                       ),
                     );
                   },

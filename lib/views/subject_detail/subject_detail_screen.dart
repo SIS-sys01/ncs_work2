@@ -3,8 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ncs_work/core/constants/app_colors.dart';
 import 'package:ncs_work/core/utils/question_pdf_service.dart';
 import 'package:ncs_work/data/models/subject_model.dart';
-import 'package:ncs_work/viewmodels/quiz_viewmodel.dart';
-import 'package:ncs_work/views/quiz/quiz_screen.dart';
 
 /// 과목 상세 선택 화면 (내부평가 / 외부평가 2개 직관적 버튼 제공)
 class SubjectDetailScreen extends ConsumerWidget {
@@ -59,10 +57,17 @@ class SubjectDetailScreen extends ConsumerWidget {
                   const SizedBox(width: 12),
                   Expanded(
                     child: _PdfHelperButton(
-                      title: '외부평가 PDF',
-                      icon: Icons.picture_as_pdf_rounded,
-                      color: Colors.indigoAccent,
-                      onTap: () => _showPdfDialog(context, subject.id, 'external', subject.name),
+                      title: '외부평가 (닫힘)',
+                      icon: Icons.lock_outline_rounded,
+                      color: Colors.grey,
+                      onTap: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('${subject.name} 외부평가 항목은 현재 미탑재 상태입니다 (닫힘).'),
+                            duration: const Duration(seconds: 2),
+                          ),
+                        );
+                      },
                     ),
                   ),
                 ],
@@ -70,58 +75,30 @@ class SubjectDetailScreen extends ConsumerWidget {
               const SizedBox(height: 20),
               Expanded(
                 child: _EvaluationOptionCard(
-                  title: '내부평가 연습 시작',
-                  subtitle: subject.id == 1
-                      ? '${subject.name} 내부평가 100% 주관식 (16문항)'
-                      : '${subject.name} 내부평가 주관식 문제 (랜덤 10문항)',
-                  icon: Icons.assignment_rounded,
+                  title: '내부평가 PDF 문제지 보기',
+                  subtitle: '${subject.name} 내부평가 폴더에 들어있는 PDF 문제지를 확인합니다.',
+                  icon: Icons.picture_as_pdf_rounded,
                   accentColor: Colors.tealAccent,
                   isAvailable: true,
-                  onTap: () {
-                    ref.read(quizProvider.notifier).loadQuestions(
-                          subjectId: subject.id,
-                          type: 'internal',
-                        );
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => QuizScreen(title: '${subject.name} - 내부평가'),
-                      ),
-                    );
-                  },
+                  onTap: () => _showPdfDialog(context, subject.id, 'internal', subject.name),
                 ),
               ),
               const SizedBox(height: 20),
               Expanded(
                 child: _EvaluationOptionCard(
-                  title: '외부평가 연습 시작',
-                  subtitle: (subject.id == 1 || subject.id == 3)
-                      ? '기술/서술/정의/개념/종류나열 핵심 주관식 (랜덤 10문항)'
-                      : '외부평가 문제는 현재 미탑재 상태입니다.',
-                  icon: Icons.menu_book_rounded,
-                  accentColor: (subject.id == 1 || subject.id == 3) ? Colors.indigoAccent : Colors.grey,
-                  isAvailable: subject.id == 1 || subject.id == 3,
-                  badgeText: (subject.id == 1 || subject.id == 3) ? null : '미탑재',
+                  title: '외부평가 (현재 미탑재)',
+                  subtitle: '${subject.name} 외부평가 항목은 현재 미탑재 상태입니다.',
+                  icon: Icons.lock_outline_rounded,
+                  accentColor: Colors.grey,
+                  isAvailable: false,
+                  badgeText: '미탑재',
                   onTap: () {
-                    if (subject.id == 1 || subject.id == 3) {
-                      ref.read(quizProvider.notifier).loadQuestions(
-                            subjectId: subject.id,
-                            type: 'external',
-                          );
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => QuizScreen(title: '${subject.name} - 외부평가'),
-                        ),
-                      );
-                    } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('${subject.name} 외부평가 문제는 현재 미탑재 상태입니다.'),
-                          duration: const Duration(seconds: 2),
-                        ),
-                      );
-                    }
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('${subject.name} 외부평가 항목은 현재 미탑재 상태입니다 (닫힘).'),
+                        duration: const Duration(seconds: 2),
+                      ),
+                    );
                   },
                 ),
               ),

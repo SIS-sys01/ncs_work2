@@ -33,37 +33,34 @@ class DiffEngine {
           ),
         );
       } else if (diff.operation == DIFF_DELETE) {
-        // 모범 답안에는 있으나 사용자가 누락한 핵심 부분 (인디고 레드 + 취소선/밑줄)
+        // 모범 답안에 수록된 핵심 표현 (보완할 텍스트 및 대조 포인트: 앰버/오렌지 하이라이트)
         spans.add(
           TextSpan(
             text: diff.text,
             style: TextStyle(
-              color: AppColors.desaturatedRed,
-              decoration: TextDecoration.lineThrough,
-              decorationColor: AppColors.desaturatedRed,
-              decorationThickness: 2,
-              fontWeight: FontWeight.w600,
+              color: isDarkMode ? Colors.orangeAccent : Colors.deepOrange,
+              fontWeight: FontWeight.w700,
               backgroundColor: isDarkMode
-                  ? AppColors.desaturatedRed.withValues(alpha: 0.15)
-                  : AppColors.desaturatedRed.withValues(alpha: 0.1),
+                  ? Colors.amber.withValues(alpha: 0.2)
+                  : Colors.amber.withValues(alpha: 0.25),
               fontSize: 16,
               height: 1.5,
             ),
           ),
         );
       } else if (diff.operation == DIFF_INSERT) {
-        // 사용자가 오답으로 잘못 입력했거나 불필요하게 추가한 부분
+        // 사용자가 자유롭게 추가 입력한 구문 (파스텔 블루/인디고)
         spans.add(
           TextSpan(
-            text: '[추가: ${diff.text}]',
+            text: '[내 입력: ${diff.text}]',
             style: TextStyle(
-              color: AppColors.desaturatedRed,
+              color: isDarkMode ? Colors.cyanAccent : Colors.indigo,
               fontStyle: FontStyle.italic,
-              fontSize: 15,
+              fontSize: 14,
               height: 1.5,
               backgroundColor: isDarkMode
-                  ? Colors.red.withValues(alpha: 0.2)
-                  : Colors.red.withValues(alpha: 0.1),
+                  ? Colors.blue.withValues(alpha: 0.15)
+                  : Colors.blue.withValues(alpha: 0.1),
             ),
           ),
         );
