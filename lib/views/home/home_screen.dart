@@ -1,4 +1,6 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ncs_work/data/datasources/database_helper.dart';
 import 'package:ncs_work/data/models/subject_model.dart';
@@ -17,7 +19,15 @@ class HomeScreen extends ConsumerWidget {
     final themeMode = ref.watch(themeProvider);
     final isDark = themeMode == ThemeMode.dark;
 
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        // 메인 홈 화면에서 뒤로가기 시 백그라운드 전환 대신 앱 프로세스 완전 종료
+        await SystemNavigator.pop();
+        exit(0);
+      },
+      child: Scaffold(
       appBar: AppBar(
         title: const Text(
           '직업상담사2급 과정평가형',
@@ -91,6 +101,7 @@ class HomeScreen extends ConsumerWidget {
           },
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }
