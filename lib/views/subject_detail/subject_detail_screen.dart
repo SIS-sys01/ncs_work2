@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ncs_work/core/constants/app_colors.dart';
 import 'package:ncs_work/core/utils/question_pdf_service.dart';
 import 'package:ncs_work/data/models/subject_model.dart';
+import 'package:ncs_work/viewmodels/quiz_viewmodel.dart';
+import 'package:ncs_work/views/quiz/quiz_screen.dart';
 
 /// 과목 상세 선택 화면 (내부평가 / 외부평가 2개 직관적 버튼 제공)
 class SubjectDetailScreen extends ConsumerWidget {
@@ -48,7 +50,7 @@ class SubjectDetailScreen extends ConsumerWidget {
                 children: [
                   Expanded(
                     child: _PdfHelperButton(
-                      title: '내부평가 PDF',
+                      title: '내부평가 PDF 폴더',
                       icon: Icons.picture_as_pdf_rounded,
                       color: Colors.tealAccent,
                       onTap: () => _showPdfDialog(context, subject.id, 'internal', subject.name),
@@ -75,12 +77,23 @@ class SubjectDetailScreen extends ConsumerWidget {
               const SizedBox(height: 20),
               Expanded(
                 child: _EvaluationOptionCard(
-                  title: '내부평가 PDF 문제지 보기',
-                  subtitle: '${subject.name} 내부평가 폴더에 들어있는 PDF 문제지를 확인합니다.',
-                  icon: Icons.picture_as_pdf_rounded,
+                  title: '내부평가',
+                  subtitle: '${subject.name} 내부평가 100% 주관식 문제 (랜덤 1문항씩 출제)',
+                  icon: Icons.assignment_rounded,
                   accentColor: Colors.tealAccent,
                   isAvailable: true,
-                  onTap: () => _showPdfDialog(context, subject.id, 'internal', subject.name),
+                  onTap: () {
+                    ref.read(quizProvider.notifier).loadQuestions(
+                          subjectId: subject.id,
+                          type: 'internal',
+                        );
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => QuizScreen(title: '${subject.name} - 내부평가'),
+                      ),
+                    );
+                  },
                 ),
               ),
               const SizedBox(height: 20),
