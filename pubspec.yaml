@@ -64,6 +64,30 @@ flutter:
   # To add assets to your application, add an assets section, like this:
   assets:
     - assets/data/
+    - Question/01_직업상담 초기면담/내부평가/
+    - Question/01_직업상담 초기면담/외부평가/
+    - Question/02_직업상담진단/내부평가/
+    - Question/02_직업상담진단/외부평가/
+    - Question/03_직업훈련상담/내부평가/
+    - Question/03_직업훈련상담/외부평가/
+    - Question/04_직업상담행정/내부평가/
+    - Question/04_직업상담행정/외부평가/
+    - Question/05_진로상담/내부평가/
+    - Question/05_진로상담/외부평가/
+    - Question/06_직업정보수집/내부평가/
+    - Question/06_직업정보수집/외부평가/
+    - Question/07_취업상담/내부평가/
+    - Question/07_취업상담/외부평가/
+    - Question/08_직업정보제공/내부평가/
+    - Question/08_직업정보제공/외부평가/
+    - Question/09_직업복귀상담/내부평가/
+    - Question/09_직업복귀상담/외부평가/
+    - Question/10_집단상담프로그램 운영/내부평가/
+    - Question/10_집단상담프로그램 운영/외부평가/
+    - Question/11_취업지원 행사운영/내부평가/
+    - Question/11_취업지원 행사운영/외부평가/
+    - Question/12_직업상담서비스 협업체계구축/내부평가/
+    - Question/12_직업상담서비스 협업체계구축/외부평가/
 
 
   # An image asset can refer to one or more resolution-specific "variants", see

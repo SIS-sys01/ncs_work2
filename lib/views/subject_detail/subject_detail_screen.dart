@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ncs_work/core/constants/app_colors.dart';
+import 'package:ncs_work/core/utils/question_pdf_service.dart';
 import 'package:ncs_work/data/models/subject_model.dart';
 import 'package:ncs_work/viewmodels/quiz_viewmodel.dart';
 import 'package:ncs_work/views/quiz/quiz_screen.dart';
@@ -44,8 +45,29 @@ class SubjectDetailScreen extends ConsumerWidget {
                       color: AppColors.textMutedDark,
                     ),
               ),
-              const SizedBox(height: 30),
-              const SizedBox(height: 30),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(
+                    child: _PdfHelperButton(
+                      title: '내부평가 PDF',
+                      icon: Icons.picture_as_pdf_rounded,
+                      color: Colors.tealAccent,
+                      onTap: () => _showPdfDialog(context, subject.id, 'internal', subject.name),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _PdfHelperButton(
+                      title: '외부평가 PDF',
+                      icon: Icons.picture_as_pdf_rounded,
+                      color: Colors.indigoAccent,
+                      onTap: () => _showPdfDialog(context, subject.id, 'external', subject.name),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
               Expanded(
                 child: _EvaluationOptionCard(
                   title: '내부평가 연습 시작',
@@ -110,7 +132,154 @@ class SubjectDetailScreen extends ConsumerWidget {
       ),
     );
   }
+
+  /// PDF 문제지 안내 및 목록 팝업
+  void _showPdfDialog(BuildContext context, int subjectId, String type, String subjectName) async {
+    final evalName = type == 'internal' ? '내부평가' : '외부평가';
+    final pdfAssets = await QuestionPdfService.getPdfAssets(subjectId: subjectId, type: type);
+    final absPath = QuestionPdfService.getAbsoluteFolderPath(subjectId: subjectId, type: type);
+
+    if (!context.mounted) return;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF1E293B),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) {
+        return Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.picture_as_pdf_rounded, color: Colors.redAccent, size: 28),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      '$subjectName - $evalName PDF 문제지',
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const Divider(height: 24, color: Colors.white24),
+              if (pdfAssets.isEmpty) ...[
+                const Text(
+                  '📂 폴더에 아직 등록된 PDF 문제지 파일이 없습니다.',
+                  style: TextStyle(color: Colors.amberAccent, fontWeight: FontWeight.bold, fontSize: 15),
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  '컴퓨터 아래 위치 폴더에 PDF 파일을 넣으시면 앱에서 자동으로 연동됩니다:',
+                  style: TextStyle(color: Colors.white70, fontSize: 13),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.black38,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.white12),
+                  ),
+                  child: SelectableText(
+                    absPath,
+                    style: const TextStyle(
+                      fontFamily: 'monospace',
+                      fontSize: 12,
+                      color: Colors.cyanAccent,
+                    ),
+                  ),
+                ),
+              ] else ...[
+                Text(
+                  '총 ${pdfAssets.length}개의 PDF 문제지 파일이 등록되어 있습니다.',
+                  style: const TextStyle(color: Colors.greenAccent, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 10),
+                Flexible(
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: pdfAssets.length,
+                    itemBuilder: (context, index) {
+                      final fileName = pdfAssets[index].split('/').last;
+                      return ListTile(
+                        leading: const Icon(Icons.picture_as_pdf, color: Colors.redAccent),
+                        title: Text(fileName, style: const TextStyle(color: Colors.white)),
+                        subtitle: Text(pdfAssets[index], style: const TextStyle(color: Colors.white38, fontSize: 11)),
+                        onTap: () {
+                          Navigator.pop(ctx);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('📄 [$fileName] 문제지를 선택하셨습니다.'),
+                            ),
+                          );
+                        },
+                      );
+                    },
+                  ),
+                ),
+              ],
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blueGrey.shade700,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text('닫기', style: TextStyle(color: Colors.white)),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
 }
+
+/// PDF 보조 안내 버튼
+class _PdfHelperButton extends StatelessWidget {
+  final String title;
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _PdfHelperButton({
+    required this.title,
+    required this.icon,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return OutlinedButton.icon(
+      onPressed: onTap,
+      style: OutlinedButton.styleFrom(
+        foregroundColor: color,
+        side: BorderSide(color: color.withValues(alpha: 0.6)),
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+      icon: Icon(icon, size: 20),
+      label: Text(
+        title,
+        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+      ),
+    );
+  }
+}
+
 
 /// 평가 선택 직관적 카드 위젯 (Stateless)
 class _EvaluationOptionCard extends StatelessWidget {
