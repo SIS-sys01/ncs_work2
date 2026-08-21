@@ -121,47 +121,6 @@ class DiffResultWidget extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          // 💡 Active Recall 더 잘 외워지는 암기 가이드 상자
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: isDarkMode
-                  ? Colors.amber.withValues(alpha: 0.1)
-                  : Colors.amber.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
-            ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Icon(Icons.tips_and_updates_rounded, color: Colors.amber, size: 20),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        '💡 암기 팁 (Active Recall)',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.amber,
-                          fontSize: 13,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '내 입력과 주황색 보완 표현의 차이점을 한 번 더 눈으로 대조하면 뇌에 오래 기억됩니다!',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: isDarkMode ? Colors.white70 : Colors.black87,
-                          height: 1.4,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
           if (keywords.isNotEmpty) ...[
             const SizedBox(height: 10),
             Container(

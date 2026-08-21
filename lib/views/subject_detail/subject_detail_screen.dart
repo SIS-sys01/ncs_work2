@@ -78,7 +78,7 @@ class SubjectDetailScreen extends ConsumerWidget {
               Expanded(
                 child: _EvaluationOptionCard(
                   title: '내부평가',
-                  subtitle: '${subject.name} 내부평가 100% 주관식 문제 (랜덤 1문항씩 출제)',
+                  subtitle: '${subject.name} 내부평가 100% 주관식 문제 (랜덤 10문항 셔플 출제)',
                   icon: Icons.assignment_rounded,
                   accentColor: Colors.tealAccent,
                   isAvailable: true,
