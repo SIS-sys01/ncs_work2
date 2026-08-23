@@ -36,6 +36,30 @@ class DiffEngine {
     return cleaned.replaceAll(RegExp(r'\s+'), '');
   }
 
+  /// 키워드가 사용자 답안에 매칭되는지 판정 (띄어쓰기, 조사, 어미 유연화 및 역방향 오채점 방지)
+  static bool isKeywordMatched(String keyword, String compactUserStr) {
+    final compactKw = compactText(keyword);
+    if (compactKw.isEmpty || compactUserStr.isEmpty) return false;
+
+    // 1. 단순 정방향 포함 (완전 일치 / 조사 정제 일치)
+    if (compactUserStr.contains(compactKw)) return true;
+
+    // 2. 단어/어근 단위 분리 매칭 (예: '보유 역량' -> ['보유', '역량'] 둘 다 사용자 답안에 존재하는지)
+    final stems = sanitizeText(keyword).split(' ').where((w) => w.length >= 2).toList();
+    if (stems.length >= 2) {
+      int matchedStems = stems.where((st) {
+        final compactSt = compactText(st);
+        return compactSt.isNotEmpty && compactUserStr.contains(compactSt);
+      }).length;
+
+      // 2개 단어인 경우 2개 모두 필수 (100%), 3개 이상인 경우 80% 이상 포함되어야 매칭
+      if (stems.length == 2 && matchedStems == 2) return true;
+      if (stems.length >= 3 && (matchedStems / stems.length >= 0.8)) return true;
+    }
+
+    return false;
+  }
+
   /// 키워드 분리 헬퍼
   static List<String> extractKeywordList(String keywords) {
     if (keywords.trim().isEmpty) return [];
@@ -100,28 +124,9 @@ class DiffEngine {
         );
       }
 
-      // 2. 본문 내용 대조 렌더링 (띄어쓰기 무시 콤팩트 매칭)
+      // 2. 본문 내용 대조 렌더링 (정방향 및 키워드 매칭)
       if (body.trim().isNotEmpty) {
-        final compactBody = compactText(body);
-
-        bool isMatched = false;
-        if (compactUserStr.isNotEmpty && compactBody.isNotEmpty) {
-          if (compactUserStr.contains(compactBody) || compactBody.contains(compactUserStr)) {
-            isMatched = true;
-          } else {
-            // 본문 단어 단위/키워드 단위 콤팩트 매칭 검사
-            final cleanBodyWords = sanitizeText(body).split(' ').where((w) => w.length >= 2).toList();
-            if (cleanBodyWords.isNotEmpty) {
-              int matchedWords = cleanBodyWords.where((w) {
-                final compactW = compactText(w);
-                return compactW.isNotEmpty && compactUserStr.contains(compactW);
-              }).length;
-              if (matchedWords / cleanBodyWords.length >= 0.5) {
-                isMatched = true;
-              }
-            }
-          }
-        }
+        bool isMatched = isKeywordMatched(body, compactUserStr);
 
         if (isMatched) {
           // 일치하는 본문 (에메랄드 그린)
@@ -175,15 +180,14 @@ class DiffEngine {
 
     if (cleanOfficial.isEmpty || cleanUser.isEmpty) return 0;
 
-    // 1. 키워드 기반 매칭 검사 (띄어쓰기 완전 무시)
+    // 1. 키워드 기반 매칭 검사
     final kwList = extractKeywordList(keywords);
     int keywordScore = 0;
     if (kwList.isNotEmpty) {
       int matchedKwCount = 0;
       final compactUserStr = compactText(userAnswer);
       for (final kw in kwList) {
-        final compactKw = compactText(kw);
-        if (compactUserStr.contains(compactKw) || compactKw.contains(compactUserStr)) {
+        if (isKeywordMatched(kw, compactUserStr)) {
           matchedKwCount++;
         }
       }

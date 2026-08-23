@@ -157,8 +157,7 @@ class DiffResultWidget extends StatelessWidget {
     final List<String> missing = [];
 
     for (final kw in kwList) {
-      final compactKw = DiffEngine.compactText(kw);
-      if (compactUser.contains(compactKw) || compactKw.contains(compactUser)) {
+      if (DiffEngine.isKeywordMatched(kw, compactUser)) {
         matched.add(kw);
       } else {
         missing.add(kw);
