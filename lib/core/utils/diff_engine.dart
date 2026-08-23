@@ -29,6 +29,13 @@ class DiffEngine {
     return cleaned;
   }
 
+  /// 띄어쓰기 및 조사(~을/를/은/는/이/가 등) 정제된 매칭용 콤팩트 텍스트 생성
+  static String compactText(String text) {
+    var cleaned = sanitizeText(text);
+    cleaned = normalizeParticles(cleaned);
+    return cleaned.replaceAll(RegExp(r'\s+'), '');
+  }
+
   /// 키워드 분리 헬퍼
   static List<String> extractKeywordList(String keywords) {
     if (keywords.trim().isEmpty) return [];
@@ -49,9 +56,8 @@ class DiffEngine {
   }) {
     final List<TextSpan> spans = [];
 
-    // 정제된 사용자 답안 (조사 및 구두점 정제)
-    final cleanUser = sanitizeText(userAnswer);
-    final normUser = normalizeParticles(cleanUser);
+    // 정제된 콤팩트 사용자 답안 (조사, 구두점, 띄어쓰기 완전 정제)
+    final compactUserStr = compactText(userAnswer);
 
     // 모범 답안 줄 단위 분리
     final lines = officialAnswer.split('\n');
@@ -94,22 +100,23 @@ class DiffEngine {
         );
       }
 
-      // 2. 본문 내용 대조 렌더링
+      // 2. 본문 내용 대조 렌더링 (띄어쓰기 무시 콤팩트 매칭)
       if (body.trim().isNotEmpty) {
-        final cleanBody = sanitizeText(body);
-        final normBody = normalizeParticles(cleanBody);
+        final compactBody = compactText(body);
 
-        // 사용자가 본문 단어를 포함하고 있는지 검사
         bool isMatched = false;
-        if (normUser.isNotEmpty && normBody.isNotEmpty) {
-          if (normUser.contains(normBody) || normBody.contains(normUser)) {
+        if (compactUserStr.isNotEmpty && compactBody.isNotEmpty) {
+          if (compactUserStr.contains(compactBody) || compactBody.contains(compactUserStr)) {
             isMatched = true;
           } else {
-            // 본문 단어 단위/키워드 단위 매칭 검사
-            final words = normBody.split(' ').where((w) => w.length >= 2).toList();
-            if (words.isNotEmpty) {
-              int matchedWords = words.where((w) => normUser.contains(w)).length;
-              if (matchedWords / words.length >= 0.5) {
+            // 본문 단어 단위/키워드 단위 콤팩트 매칭 검사
+            final cleanBodyWords = sanitizeText(body).split(' ').where((w) => w.length >= 2).toList();
+            if (cleanBodyWords.isNotEmpty) {
+              int matchedWords = cleanBodyWords.where((w) {
+                final compactW = compactText(w);
+                return compactW.isNotEmpty && compactUserStr.contains(compactW);
+              }).length;
+              if (matchedWords / cleanBodyWords.length >= 0.5) {
                 isMatched = true;
               }
             }
@@ -157,7 +164,7 @@ class DiffEngine {
     return spans;
   }
 
-  /// 스마트 일치율 계산 (0 ~ 100%) - 번호/구두점/조사 무시 & 키워드 매칭 우대
+  /// 스마트 일치율 계산 (0 ~ 100%) - 번호/구두점/조사/띄어쓰기 무시 & 키워드 매칭 우대
   static int calculateMatchScore(
     String officialAnswer,
     String userAnswer, {
@@ -168,15 +175,15 @@ class DiffEngine {
 
     if (cleanOfficial.isEmpty || cleanUser.isEmpty) return 0;
 
-    // 1. 키워드 기반 매칭 검사
+    // 1. 키워드 기반 매칭 검사 (띄어쓰기 완전 무시)
     final kwList = extractKeywordList(keywords);
     int keywordScore = 0;
     if (kwList.isNotEmpty) {
       int matchedKwCount = 0;
-      final normalizedUser = normalizeParticles(cleanUser);
+      final compactUserStr = compactText(userAnswer);
       for (final kw in kwList) {
-        final normKw = normalizeParticles(kw);
-        if (normalizedUser.contains(normKw) || cleanUser.contains(kw)) {
+        final compactKw = compactText(kw);
+        if (compactUserStr.contains(compactKw) || compactKw.contains(compactUserStr)) {
           matchedKwCount++;
         }
       }
@@ -184,7 +191,7 @@ class DiffEngine {
       if (keywordScore > 100) keywordScore = 100;
     }
 
-    // 2. 텍스트 문자열 기반 매칭 검사 (공백 완전 제거 후 diff)
+    // 2. 텍스트 문자열 기반 매칭 검사 (공백/띄어쓰기 완전 제거 후 diff)
     final noSpaceOfficial = cleanOfficial.replaceAll(RegExp(r'\s+'), '');
     final noSpaceUser = cleanUser.replaceAll(RegExp(r'\s+'), '');
 

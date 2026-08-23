@@ -151,14 +151,14 @@ class DiffResultWidget extends StatelessWidget {
     final kwList = DiffEngine.extractKeywordList(keywords);
     if (kwList.isEmpty) return const SizedBox.shrink();
 
-    final normUser = DiffEngine.normalizeParticles(DiffEngine.sanitizeText(userAnswer));
+    final compactUser = DiffEngine.compactText(userAnswer);
 
     final List<String> matched = [];
     final List<String> missing = [];
 
     for (final kw in kwList) {
-      final normKw = DiffEngine.normalizeParticles(kw);
-      if (normUser.contains(normKw) || DiffEngine.sanitizeText(userAnswer).contains(kw)) {
+      final compactKw = DiffEngine.compactText(kw);
+      if (compactUser.contains(compactKw) || compactKw.contains(compactUser)) {
         matched.add(kw);
       } else {
         missing.add(kw);

@@ -18,4 +18,21 @@ void main() {
     );
     expect(spans.isNotEmpty, isTrue);
   });
+
+  test('Spacing difference (e.g. 집체 훈련 vs 집체훈련) should score 100%', () {
+    const official = '1. 집체훈련\n2. 현장훈련';
+    const user = '집체 훈련, 현장 훈련';
+    const keywords = '집체훈련, 현장훈련';
+
+    final score = DiffEngine.calculateMatchScore(official, user, keywords: keywords);
+    expect(score, 100);
+
+    final spans = DiffEngine.buildHighlightedDiffSpans(
+      officialAnswer: official,
+      userAnswer: user,
+      isDarkMode: true,
+      keywords: keywords,
+    );
+    expect(spans.isNotEmpty, isTrue);
+  });
 }
