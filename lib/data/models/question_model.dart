@@ -45,6 +45,7 @@ class QuestionModel {
   /// 문제 지문 앞머리의 모든 태그([요소/기술], [8가지 나열], Q1-변형1: 등)를 100% 깔끔하게 제거한 순수 지문
   String get formattedQuestion {
     return question
+        .replaceAll(RegExp(r'^Q\d+\.\s*'), '')
         .replaceAll(RegExp(r'^\[[^\]]+\]\s*'), '')
         .replaceAll(RegExp(r'^Q\d+[-_]?변형\d+:\s*'), '')
         .replaceAll(RegExp(r'\[Q\d+[-_]?변형\d+:\s*'), '')
