@@ -129,7 +129,11 @@ class QuizNotifier extends Notifier<QuizState> {
     final currentQ = state.currentQuestion;
     if (currentQ == null) return;
 
-    final score = DiffEngine.calculateMatchScore(currentQ.answer, state.currentInputText);
+    final score = DiffEngine.calculateMatchScore(
+      currentQ.answer,
+      state.currentInputText,
+      keywords: currentQ.keywords,
+    );
 
     // DB에 사용자 답변 및 점수 업데이트
     await DatabaseHelper.instance.updateQuestionUserAnswer(
@@ -164,7 +168,11 @@ class QuizNotifier extends Notifier<QuizState> {
       currentInputText: nextQ.userAnswer ?? '',
       isSubmitted: nextQ.userAnswer?.isNotEmpty ?? false,
       matchScore: nextQ.userAnswer?.isNotEmpty ?? false
-          ? DiffEngine.calculateMatchScore(nextQ.answer, nextQ.userAnswer!)
+          ? DiffEngine.calculateMatchScore(
+              nextQ.answer,
+              nextQ.userAnswer!,
+              keywords: nextQ.keywords,
+            )
           : 0,
     );
   }
@@ -181,7 +189,11 @@ class QuizNotifier extends Notifier<QuizState> {
       currentInputText: prevQ.userAnswer ?? '',
       isSubmitted: prevQ.userAnswer?.isNotEmpty ?? false,
       matchScore: prevQ.userAnswer?.isNotEmpty ?? false
-          ? DiffEngine.calculateMatchScore(prevQ.answer, prevQ.userAnswer!)
+          ? DiffEngine.calculateMatchScore(
+              prevQ.answer,
+              prevQ.userAnswer!,
+              keywords: prevQ.keywords,
+            )
           : 0,
     );
   }

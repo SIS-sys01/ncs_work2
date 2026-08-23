@@ -26,6 +26,7 @@ class DiffResultWidget extends StatelessWidget {
       officialAnswer: officialAnswer,
       userAnswer: userAnswer,
       isDarkMode: isDarkMode,
+      keywords: keywords,
     );
 
     return Container(

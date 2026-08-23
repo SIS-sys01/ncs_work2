@@ -7,24 +7,61 @@ import 'package:ncs_work/core/constants/app_colors.dart';
 class DiffEngine {
   DiffEngine._();
 
+  /// 텍스트 정제: 번호 목록(1., 2), (가), ① 등) 및 구두점(., ,, !, ? 등) 및 불릿 기호 제거
+  static String sanitizeText(String text) {
+    var cleaned = text;
+    // 1. 번호 목록 및 기호 헤더 제거 (1., 2), (가), ①, •, - 등)
+    cleaned = cleaned.replaceAll(
+      RegExp(r'(?:^|\n|\s*)(?:\d+[\.\)]|\([가-하0-9a-zA-Z]+\)|[①-⑩]|[가-하][\.\)]|[•\-\*\+▶▪])\s*'),
+      ' ',
+    );
+    // 2. 구두점 및 기호 제거 (마침표, 쉼표, 느낌표, 물음표, 콜론 등)
+    cleaned = cleaned.replaceAll(RegExp(r'[^\w\s가-힣]'), ' ');
+    // 3. 연속 공백 및 줄바꿈 정규화
+    cleaned = cleaned.replaceAll(RegExp(r'\s+'), ' ').trim();
+    return cleaned;
+  }
+
+  /// 한국어 조사(~을/를/은/는/이/가/와/과/등/의/에/으로/로) 정제
+  static String normalizeParticles(String text) {
+    // 단어 끝에 붙은 흔한 조사 정제
+    var cleaned = text.replaceAll(RegExp(r'(?<=[가-힣]{2,})(을|를|은|는|이|가|와|과|등|의|에|으로|로)(?=\s|$)'), '');
+    return cleaned;
+  }
+
+  /// 키워드 분리 헬퍼
+  static List<String> extractKeywordList(String keywords) {
+    if (keywords.trim().isEmpty) return [];
+    return keywords
+        .split(RegExp(r'[,/\n;\\]'))
+        .map((k) => sanitizeText(k))
+        .where((k) => k.isNotEmpty)
+        .toList();
+  }
+
   /// 모범 답안(officialAnswer)과 사용자 입력 답안(userAnswer)을 비교하여 TextSpan 목록으로 렌더링
   static List<TextSpan> buildHighlightedDiffSpans({
     required String officialAnswer,
     required String userAnswer,
     required bool isDarkMode,
+    String keywords = '',
   }) {
-    // 띄어쓰기/공백 차이로 인한 무의미한 차이 강조 방지를 위해 연속 공백 정규화
-    final normalizedOfficial = officialAnswer.replaceAll(RegExp(r'[ \t]+'), ' ').trim();
-    final normalizedUser = userAnswer.replaceAll(RegExp(r'[ \t]+'), ' ').trim();
+    // 모범 답안 및 사용자 답안에서 번호/기호/구두점 정제
+    final cleanOfficial = sanitizeText(officialAnswer);
+    final cleanUser = sanitizeText(userAnswer);
 
-    final List<Diff> diffs = diff(normalizedOfficial, normalizedUser);
+    // 조사 정제된 텍스트로 diff 수행
+    final normOfficial = normalizeParticles(cleanOfficial);
+    final normUser = normalizeParticles(cleanUser);
+
+    final List<Diff> diffs = diff(normOfficial, normUser);
     cleanupSemantic(diffs);
 
     final List<TextSpan> spans = [];
 
     for (final diff in diffs) {
       if (diff.operation == DIFF_EQUAL) {
-        // 모범 답안과 정확히 일치하는 부분 (에메랄드 그린)
+        // 모범 답안과 일치하는 핵심 구문 (에메랄드 그린)
         spans.add(
           TextSpan(
             text: diff.text,
@@ -37,7 +74,6 @@ class DiffEngine {
           ),
         );
       } else if (diff.operation == DIFF_DELETE) {
-        // 공백 단독인 경우는 굳이 하이라이트 박스로 보여주지 않음
         if (diff.text.trim().isEmpty) {
           spans.add(
             TextSpan(
@@ -47,7 +83,7 @@ class DiffEngine {
           );
           continue;
         }
-        // 모범 답안에 수록된 핵심 표현 (보완할 텍스트 및 대조 포인트: 앰버/오렌지 하이라이트)
+        // 모범 답안 수록 누락 키워드 (오렌지/앰버)
         spans.add(
           TextSpan(
             text: diff.text,
@@ -63,11 +99,14 @@ class DiffEngine {
           ),
         );
       } else if (diff.operation == DIFF_INSERT) {
-        if (diff.text.trim().isEmpty) continue; // 순수 공백 추가는 생략
-        // 사용자가 자유롭게 추가 입력한 구문 (파스텔 블루/인디고)
+        final trimmed = diff.text.trim();
+        // 기호, 구두점, 공백, 단독 조사 입력은 [추가] 하이라이트에서 제외하여 깔끔한 뷰 제공
+        if (trimmed.isEmpty) continue;
+        if (RegExp(r'^[^\w가-힣]+$').hasMatch(trimmed)) continue;
+
         spans.add(
           TextSpan(
-            text: '[내 입력: ${diff.text}]',
+            text: '[추가: $trimmed]',
             style: TextStyle(
               color: isDarkMode ? Colors.cyanAccent : Colors.indigo,
               fontStyle: FontStyle.italic,
@@ -85,29 +124,64 @@ class DiffEngine {
     return spans;
   }
 
-  /// 띄어쓰기(공백/줄바꿈)를 무시한 일치율 계산 (0 ~ 100%)
-  static int calculateMatchScore(String officialAnswer, String userAnswer) {
-    // 띄어쓰기 및 모든 공백문자(\s+) 완전 제거
-    final cleanOfficial = officialAnswer.replaceAll(RegExp(r'\s+'), '');
-    final cleanUser = userAnswer.replaceAll(RegExp(r'\s+'), '');
+  /// 스마트 일치율 계산 (0 ~ 100%) - 번호/구두점/조사 무시 & 키워드 매칭 우대
+  static int calculateMatchScore(
+    String officialAnswer,
+    String userAnswer, {
+    String keywords = '',
+  }) {
+    final cleanOfficial = sanitizeText(officialAnswer);
+    final cleanUser = sanitizeText(userAnswer);
 
-    if (cleanOfficial.isEmpty) return 0;
-    if (cleanUser.isEmpty) return 0;
+    if (cleanOfficial.isEmpty || cleanUser.isEmpty) return 0;
 
-    final diffs = diff(cleanOfficial, cleanUser);
-    cleanupSemantic(diffs);
-
-    int matchChars = 0;
-    for (final diff in diffs) {
-      if (diff.operation == DIFF_EQUAL) {
-        matchChars += diff.text.length;
+    // 1. 키워드 기반 매칭 검사
+    final kwList = extractKeywordList(keywords);
+    int keywordScore = 0;
+    if (kwList.isNotEmpty) {
+      int matchedKwCount = 0;
+      final normalizedUser = normalizeParticles(cleanUser);
+      for (final kw in kwList) {
+        final normKw = normalizeParticles(kw);
+        if (normalizedUser.contains(normKw) || cleanUser.contains(kw)) {
+          matchedKwCount++;
+        }
       }
+      keywordScore = (matchedKwCount / kwList.length * 100).round();
+      if (keywordScore > 100) keywordScore = 100;
     }
 
-    final totalChars = cleanOfficial.length;
-    if (totalChars == 0) return 0;
+    // 2. 텍스트 문자열 기반 매칭 검사 (공백 완전 제거 후 diff)
+    final noSpaceOfficial = cleanOfficial.replaceAll(RegExp(r'\s+'), '');
+    final noSpaceUser = cleanUser.replaceAll(RegExp(r'\s+'), '');
 
-    final ratio = (matchChars / totalChars * 100).round();
-    return ratio > 100 ? 100 : ratio;
+    final normOfficial = normalizeParticles(noSpaceOfficial);
+    final normUser = normalizeParticles(noSpaceUser);
+
+    int textScore = 0;
+    if (normOfficial.isNotEmpty && normUser.isNotEmpty) {
+      final diffs = diff(normOfficial, normUser);
+      cleanupSemantic(diffs);
+
+      int matchChars = 0;
+      for (final diff in diffs) {
+        if (diff.operation == DIFF_EQUAL) {
+          matchChars += diff.text.length;
+        }
+      }
+      textScore = (matchChars / normOfficial.length * 100).round();
+      if (textScore > 100) textScore = 100;
+    }
+
+    // 3. 키워드 점수와 텍스트 점수 중 더 높은 점수를 반영 (키워드가 모두 포함되면 100% 보장)
+    if (kwList.isNotEmpty && keywordScore >= 100) {
+      return 100;
+    }
+
+    final finalScore = (kwList.isNotEmpty)
+        ? (keywordScore * 0.6 + textScore * 0.4).round()
+        : textScore;
+
+    return finalScore > 100 ? 100 : (finalScore < 0 ? 0 : finalScore);
   }
 }
