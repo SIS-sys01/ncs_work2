@@ -40,84 +40,117 @@ class DiffEngine {
   }
 
   /// 모범 답안(officialAnswer)과 사용자 입력 답안(userAnswer)을 비교하여 TextSpan 목록으로 렌더링
+  /// - 줄바꿈(\n) 및 번호 목록(1., 2., (가), ① 등) 구조를 가독성 있게 보존
   static List<TextSpan> buildHighlightedDiffSpans({
     required String officialAnswer,
     required String userAnswer,
     required bool isDarkMode,
     String keywords = '',
   }) {
-    // 모범 답안 및 사용자 답안에서 번호/기호/구두점 정제
-    final cleanOfficial = sanitizeText(officialAnswer);
-    final cleanUser = sanitizeText(userAnswer);
-
-    // 조사 정제된 텍스트로 diff 수행
-    final normOfficial = normalizeParticles(cleanOfficial);
-    final normUser = normalizeParticles(cleanUser);
-
-    final List<Diff> diffs = diff(normOfficial, normUser);
-    cleanupSemantic(diffs);
-
     final List<TextSpan> spans = [];
 
-    for (final diff in diffs) {
-      if (diff.operation == DIFF_EQUAL) {
-        // 모범 답안과 일치하는 핵심 구문 (에메랄드 그린)
+    // 정제된 사용자 답안 (조사 및 구두점 정제)
+    final cleanUser = sanitizeText(userAnswer);
+    final normUser = normalizeParticles(cleanUser);
+
+    // 모범 답안 줄 단위 분리
+    final lines = officialAnswer.split('\n');
+
+    final RegExp headerRegExp = RegExp(
+      r'^(?:\d+[\.\)]|\([가-하0-9a-zA-Z]+\)|[①-⑩]|[가-하][\.\)]|[•\-\*\+▶▪]|\[[^\]]+\])\s*',
+    );
+
+    for (int i = 0; i < lines.length; i++) {
+      final line = lines[i];
+      if (line.trim().isEmpty) {
+        if (i < lines.length - 1) {
+          spans.add(const TextSpan(text: '\n'));
+        }
+        continue;
+      }
+
+      // 1. 번호 / 헤더 기호 분리
+      final match = headerRegExp.firstMatch(line);
+      String header = '';
+      String body = line;
+
+      if (match != null) {
+        header = match.group(0) ?? '';
+        body = line.substring(header.length);
+      }
+
+      // 번호/기호 헤더 렌더링 (가독성 높은 선명한 스타일)
+      if (header.isNotEmpty) {
         spans.add(
           TextSpan(
-            text: diff.text,
-            style: const TextStyle(
-              color: AppColors.emeraldGreen,
+            text: header,
+            style: TextStyle(
+              color: isDarkMode ? Colors.cyanAccent : Colors.indigo,
               fontWeight: FontWeight.bold,
               fontSize: 16,
               height: 1.5,
             ),
           ),
         );
-      } else if (diff.operation == DIFF_DELETE) {
-        if (diff.text.trim().isEmpty) {
+      }
+
+      // 2. 본문 내용 대조 렌더링
+      if (body.trim().isNotEmpty) {
+        final cleanBody = sanitizeText(body);
+        final normBody = normalizeParticles(cleanBody);
+
+        // 사용자가 본문 단어를 포함하고 있는지 검사
+        bool isMatched = false;
+        if (normUser.isNotEmpty && normBody.isNotEmpty) {
+          if (normUser.contains(normBody) || normBody.contains(normUser)) {
+            isMatched = true;
+          } else {
+            // 본문 단어 단위/키워드 단위 매칭 검사
+            final words = normBody.split(' ').where((w) => w.length >= 2).toList();
+            if (words.isNotEmpty) {
+              int matchedWords = words.where((w) => normUser.contains(w)).length;
+              if (matchedWords / words.length >= 0.5) {
+                isMatched = true;
+              }
+            }
+          }
+        }
+
+        if (isMatched) {
+          // 일치하는 본문 (에메랄드 그린)
           spans.add(
             TextSpan(
-              text: diff.text,
-              style: const TextStyle(fontSize: 16, height: 1.5),
+              text: body,
+              style: const TextStyle(
+                color: AppColors.emeraldGreen,
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+                height: 1.5,
+              ),
             ),
           );
-          continue;
+        } else {
+          // 누락/미완성 본문 (오렌지/앰버)
+          spans.add(
+            TextSpan(
+              text: body,
+              style: TextStyle(
+                color: isDarkMode ? Colors.orangeAccent : Colors.deepOrange,
+                fontWeight: FontWeight.w700,
+                backgroundColor: isDarkMode
+                    ? Colors.amber.withValues(alpha: 0.2)
+                    : Colors.amber.withValues(alpha: 0.25),
+                fontSize: 16,
+                height: 1.5,
+              ),
+            ),
+          );
         }
-        // 모범 답안 수록 누락 키워드 (오렌지/앰버)
-        spans.add(
-          TextSpan(
-            text: diff.text,
-            style: TextStyle(
-              color: isDarkMode ? Colors.orangeAccent : Colors.deepOrange,
-              fontWeight: FontWeight.w700,
-              backgroundColor: isDarkMode
-                  ? Colors.amber.withValues(alpha: 0.2)
-                  : Colors.amber.withValues(alpha: 0.25),
-              fontSize: 16,
-              height: 1.5,
-            ),
-          ),
-        );
-      } else if (diff.operation == DIFF_INSERT) {
-        final trimmed = diff.text.trim();
-        // 기호, 구두점, 공백, 단독 조사 입력은 [추가] 하이라이트에서 제외하여 깔끔한 뷰 제공
-        if (trimmed.isEmpty) continue;
-        if (RegExp(r'^[^\w가-힣]+$').hasMatch(trimmed)) continue;
+      }
 
-        spans.add(
-          TextSpan(
-            text: '[추가: $trimmed]',
-            style: TextStyle(
-              color: isDarkMode ? Colors.cyanAccent : Colors.indigo,
-              fontStyle: FontStyle.italic,
-              fontSize: 14,
-              height: 1.5,
-              backgroundColor: isDarkMode
-                  ? Colors.blue.withValues(alpha: 0.15)
-                  : Colors.blue.withValues(alpha: 0.1),
-            ),
-          ),
-        );
+      // 줄바꿈 추가
+      if (i < lines.length - 1) {
+        spans.add(const TextSpan(text: '\n'));
       }
     }
 
