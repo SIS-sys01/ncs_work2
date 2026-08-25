@@ -21,8 +21,8 @@ class UpdateCheckerService {
         final String latestVersion = (data['tag_name'] as String? ?? '').replaceAll('v', '');
         final String downloadUrl = data['html_url'] as String? ?? 'https://github.com/$githubRepo/releases';
 
-        // 현재 앱의 설치 버전 (pubspec.yaml 버전 0.0.9 기준)
-        const currentVersion = '0.0.9';
+        // 현재 앱의 설치 버전 (pubspec.yaml 버전 0.1.1 기준)
+        const currentVersion = '0.1.1';
 
         if (_isNewerVersion(currentVersion, latestVersion)) {
           if (!context.mounted) return;
