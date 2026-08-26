@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ncs_work/core/constants/app_colors.dart';
 import 'package:ncs_work/viewmodels/quiz_viewmodel.dart';
 import 'package:ncs_work/viewmodels/theme_viewmodel.dart';
+import 'package:ncs_work/views/quiz/widgets/custom_question_input.dart';
 import 'package:ncs_work/views/quiz/widgets/diff_result_widget.dart';
 import 'package:ncs_work/views/quiz/widgets/question_header.dart';
 
@@ -20,25 +21,14 @@ class QuizScreen extends ConsumerStatefulWidget {
 }
 
 class _QuizScreenState extends ConsumerState<QuizScreen> {
-  late TextEditingController _inputController;
-
   @override
   void initState() {
     super.initState();
-    _inputController = TextEditingController();
   }
 
   @override
   void dispose() {
-    // 메모리 누수 방지를 위한 컨트롤러 해제
-    _inputController.dispose();
     super.dispose();
-  }
-
-  void _syncControllerWithState(String text) {
-    if (_inputController.text != text) {
-      _inputController.text = text;
-    }
   }
 
   @override
@@ -64,8 +54,6 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
         ),
       );
     }
-
-    _syncControllerWithState(quizState.currentInputText);
 
     return Scaffold(
       appBar: AppBar(
@@ -122,29 +110,10 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
                     ),
               ),
               const SizedBox(height: 8),
-              TextField(
-                controller: _inputController,
-                maxLines: 5,
-                enabled: !quizState.isSubmitted,
-                onChanged: (val) {
-                  ref.read(quizProvider.notifier).updateInputText(val);
-                },
-                decoration: InputDecoration(
-                  hintText: '문제에 대한 서술/기술형 답안을 직접 타이핑하여 작성하세요...',
-                  hintStyle: TextStyle(
-                    color: isDark ? AppColors.textMutedDark : AppColors.textMutedLight,
-                  ),
-                  filled: true,
-                  fillColor: isDark ? AppColors.darkCard : AppColors.lightCard,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide.none,
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: const BorderSide(color: AppColors.primary, width: 2),
-                  ),
-                ),
+              CustomQuestionInput(
+                question: currentQuestion,
+                isDark: isDark,
+                isSubmitted: quizState.isSubmitted,
               ),
               const SizedBox(height: 20),
               if (!quizState.isSubmitted)

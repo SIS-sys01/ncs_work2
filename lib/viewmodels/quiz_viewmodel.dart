@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'dart:math';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ncs_work/core/utils/diff_engine.dart';
 import 'package:ncs_work/data/datasources/database_helper.dart';
@@ -73,8 +75,38 @@ class QuizNotifier extends Notifier<QuizState> {
       limit: 10,
     );
 
-    // 이전 작성 답변 초기화 처리 (새 세션 리셋)
-    final freshQuestions = rawQuestions.map((q) => q.copyWith(userAnswer: '')).toList();
+    final freshQuestions = rawQuestions.map((q) {
+      if (q.questionType == 'dynamic_match') {
+        final options = List<dynamic>.from(q.dynamicOptions ?? []);
+        options.shuffle(Random());
+        return q.copyWith(userAnswer: '', dynamicOptions: options);
+      } else if (q.questionType == 'cloze') {
+        final text = q.clozeText ?? '';
+        final exp = RegExp(r'\[blank\|([^\]]+)\]');
+        final matches = exp.allMatches(text).toList();
+
+        matches.shuffle(Random());
+        final selectedMatches = matches.take(5).toList();
+        final selectedStarts = selectedMatches.map((e) => e.start).toSet();
+
+        List<String> answers = [];
+        final displayText = text.replaceAllMapped(exp, (match) {
+          if (selectedStarts.contains(match.start)) {
+            answers.add(match.group(1)!);
+            return '________';
+          } else {
+            return match.group(1)!;
+          }
+        });
+
+        return q.copyWith(
+          userAnswer: '',
+          clozeDisplayText: displayText,
+          clozeAnswers: answers,
+        );
+      }
+      return q.copyWith(userAnswer: '');
+    }).toList();
 
     state = QuizState(
       questions: freshQuestions,
@@ -105,7 +137,38 @@ class QuizNotifier extends Notifier<QuizState> {
     state = state.copyWith(isLoading: true);
 
     final rawQuestions = await DatabaseHelper.instance.getRandomQuestions();
-    final freshQuestions = rawQuestions.map((q) => q.copyWith(userAnswer: '')).toList();
+    final freshQuestions = rawQuestions.map((q) {
+      if (q.questionType == 'dynamic_match') {
+        final options = List<dynamic>.from(q.dynamicOptions ?? []);
+        options.shuffle(Random());
+        return q.copyWith(userAnswer: '', dynamicOptions: options);
+      } else if (q.questionType == 'cloze') {
+        final text = q.clozeText ?? '';
+        final exp = RegExp(r'\[blank\|([^\]]+)\]');
+        final matches = exp.allMatches(text).toList();
+
+        matches.shuffle(Random());
+        final selectedMatches = matches.take(5).toList();
+        final selectedStarts = selectedMatches.map((e) => e.start).toSet();
+
+        List<String> answers = [];
+        final displayText = text.replaceAllMapped(exp, (match) {
+          if (selectedStarts.contains(match.start)) {
+            answers.add(match.group(1)!);
+            return '________';
+          } else {
+            return match.group(1)!;
+          }
+        });
+
+        return q.copyWith(
+          userAnswer: '',
+          clozeDisplayText: displayText,
+          clozeAnswers: answers,
+        );
+      }
+      return q.copyWith(userAnswer: '');
+    }).toList();
 
     state = QuizState(
       questions: freshQuestions,
@@ -129,11 +192,42 @@ class QuizNotifier extends Notifier<QuizState> {
     final currentQ = state.currentQuestion;
     if (currentQ == null) return;
 
-    final score = DiffEngine.calculateMatchScore(
-      currentQ.answer,
-      state.currentInputText,
-      keywords: currentQ.keywords,
-    );
+    int score = 0;
+    if (currentQ.questionType == 'dynamic_match') {
+      try {
+        final List<dynamic> inputs = json.decode(state.currentInputText);
+        final opts = currentQ.dynamicOptions ?? [];
+        int matchCount = 0;
+        for (int i = 0; i < opts.length && i < inputs.length; i++) {
+          final opt = opts[i] as Map<String, dynamic>;
+          final ans = opt['answer'] as String? ?? '';
+          final kws = (opt['keywords'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [];
+          final input = inputs[i].toString();
+          
+          final sc = DiffEngine.calculateMatchScore(ans, input, keywords: kws.join(','));
+          if (sc > 50) matchCount++;
+        }
+        score = opts.isNotEmpty ? (matchCount * 100 ~/ opts.length) : 0;
+      } catch (_) {}
+    } else if (currentQ.questionType == 'cloze') {
+      try {
+        final List<dynamic> inputs = json.decode(state.currentInputText);
+        final answers = currentQ.clozeAnswers ?? [];
+        int matchCount = 0;
+        for (int i = 0; i < answers.length && i < inputs.length; i++) {
+           final ans = answers[i].replaceAll(' ', '');
+           final input = inputs[i].toString().replaceAll(' ', '');
+           if (ans == input) matchCount++;
+        }
+        score = answers.isNotEmpty ? (matchCount * 100 ~/ answers.length) : 0;
+      } catch (_) {}
+    } else {
+      score = DiffEngine.calculateMatchScore(
+        currentQ.answer,
+        state.currentInputText,
+        keywords: currentQ.keywords,
+      );
+    }
 
     // DB에 사용자 답변 및 점수 업데이트
     await DatabaseHelper.instance.updateQuestionUserAnswer(

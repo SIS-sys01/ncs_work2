@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 /// 주관식 문제 및 답안 데이터 모델
 class QuestionModel {
   final String id;
@@ -11,6 +13,11 @@ class QuestionModel {
   final String explanation;
   final String? userAnswer;
   final int? lastScore;
+  final String? questionType;
+  final List<dynamic>? dynamicOptions;
+  final String? clozeText;
+  final String? clozeDisplayText;
+  final List<String>? clozeAnswers;
 
   const QuestionModel({
     required this.id,
@@ -24,6 +31,11 @@ class QuestionModel {
     required this.explanation,
     this.userAnswer,
     this.lastScore,
+    this.questionType,
+    this.dynamicOptions,
+    this.clozeText,
+    this.clozeDisplayText,
+    this.clozeAnswers,
   });
 
   factory QuestionModel.fromMap(Map<String, dynamic> map) {
@@ -39,6 +51,9 @@ class QuestionModel {
       explanation: map['explanation'] as String? ?? '',
       userAnswer: map['user_answer'] as String?,
       lastScore: map['last_score'] as int?,
+      questionType: map['question_type'] as String?,
+      dynamicOptions: map['dynamic_options'] != null ? json.decode(map['dynamic_options']) as List<dynamic> : null,
+      clozeText: map['cloze_text'] as String?,
     );
   }
 
@@ -66,12 +81,20 @@ class QuestionModel {
       'explanation': explanation,
       'user_answer': userAnswer,
       'last_score': lastScore,
+      'question_type': questionType,
+      'dynamic_options': dynamicOptions != null ? json.encode(dynamicOptions) : null,
+      'cloze_text': clozeText,
     };
   }
 
   QuestionModel copyWith({
     String? userAnswer,
     int? lastScore,
+    String? questionType,
+    List<dynamic>? dynamicOptions,
+    String? clozeText,
+    String? clozeDisplayText,
+    List<String>? clozeAnswers,
   }) {
     return QuestionModel(
       id: id,
@@ -85,6 +108,11 @@ class QuestionModel {
       explanation: explanation,
       userAnswer: userAnswer ?? this.userAnswer,
       lastScore: lastScore ?? this.lastScore,
+      questionType: questionType ?? this.questionType,
+      dynamicOptions: dynamicOptions ?? this.dynamicOptions,
+      clozeText: clozeText ?? this.clozeText,
+      clozeDisplayText: clozeDisplayText ?? this.clozeDisplayText,
+      clozeAnswers: clozeAnswers ?? this.clozeAnswers,
     );
   }
 }

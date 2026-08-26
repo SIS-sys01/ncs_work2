@@ -14,7 +14,7 @@ class DatabaseHelper {
 
   Future<Database> get database async {
     if (_database != null) return _database!;
-    _database = await _initDB('vocational_counselor2_v23.db');
+    _database = await _initDB('vocational_counselor2_v24.db');
     return _database!;
   }
 
@@ -52,6 +52,9 @@ class DatabaseHelper {
         explanation TEXT,
         user_answer TEXT,
         last_score INTEGER,
+        question_type TEXT,
+        dynamic_options TEXT,
+        cloze_text TEXT,
         FOREIGN KEY (subject_id) REFERENCES subjects (id)
       )
     ''');
@@ -88,11 +91,14 @@ class DatabaseHelper {
             'type': q['type'],
             'question_num': q['question_num'],
             'question': q['question'],
-            'answer': q['answer'],
+            'answer': q['answer'] ?? '',
             'keywords': q['keywords'] ?? '',
             'explanation': q['explanation'] ?? '',
             'user_answer': null,
             'last_score': null,
+            'question_type': q['question_type'],
+            'dynamic_options': q['dynamic_options'] != null ? json.encode(q['dynamic_options']) : null,
+            'cloze_text': q['cloze_text'],
           }, conflictAlgorithm: ConflictAlgorithm.replace);
         }
       }

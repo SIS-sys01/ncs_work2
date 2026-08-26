@@ -66,6 +66,21 @@ class QuestionHeader extends StatelessWidget {
             height: 1.4,
           ),
         ),
+        if (question.questionType == 'cloze' && question.clozeDisplayText != null) ...[
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.grey.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
+            ),
+            child: Text(
+              question.clozeDisplayText!,
+              style: const TextStyle(fontSize: 16, height: 1.6),
+            ),
+          ),
+        ],
       ],
     );
   }
