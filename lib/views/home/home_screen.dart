@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:ncs_work/core/services/notice_service.dart';
 import 'package:ncs_work/core/services/update_checker_service.dart';
 import 'package:ncs_work/data/datasources/database_helper.dart';
 import 'package:ncs_work/data/models/subject_model.dart';
@@ -22,9 +23,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    // 화면 시작 직후 깃허브 최신 버전 체크 실행
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      UpdateCheckerService.checkForUpdates(context);
+    // 화면 시작 직후 업데이트 공지 팝업 및 깃허브 최신 버전 체크 실행
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await NoticeService.checkVersionNotice(context);
+      if (mounted) {
+        UpdateCheckerService.checkForUpdates(context);
+      }
     });
   }
 
