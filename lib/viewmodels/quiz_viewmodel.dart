@@ -90,12 +90,12 @@ class QuizNotifier extends Notifier<QuizState> {
         final selectedStarts = selectedMatches.map((e) => e.start).toSet();
 
         List<String> answers = [];
-        final displayText = text.replaceAllMapped(exp, (match) {
+        final displayText = text.replaceAllMapped(exp, (Match match) {
           if (selectedStarts.contains(match.start)) {
-            answers.add(match.group(1)!);
+            answers.add(match.group(1) ?? '');
             return '________';
           } else {
-            return match.group(1)!;
+            return match.group(1) ?? '';
           }
         });
 
