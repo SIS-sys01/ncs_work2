@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:ncs_work/data/models/question_model.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ncs_work/core/constants/app_colors.dart';
 import 'package:ncs_work/viewmodels/quiz_viewmodel.dart';
@@ -29,6 +31,32 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
   @override
   void dispose() {
     super.dispose();
+  }
+
+  String _buildOfficialAnswer(QuestionModel q) {
+    if (q.questionType == 'dynamic_match') {
+      final opts = q.dynamicOptions ?? [];
+      return opts.asMap().entries.map((e) {
+        final opt = e.value as Map<String, dynamic>;
+        final ans = opt['answer'] ?? '';
+        return '[예시 ${e.key + 1} 정답] $ans';
+      }).join('\n\n');
+    } else if (q.questionType == 'cloze') {
+      final answers = q.clozeAnswers ?? [];
+      return answers.asMap().entries.map((e) => '[${e.key + 1}번 괄호 정답]\n${e.value}').join('\n\n');
+    }
+    return q.answer;
+  }
+
+  String _buildUserAnswer(QuestionModel q, String rawInput) {
+    if (q.questionType == 'dynamic_match' || q.questionType == 'cloze') {
+      try {
+        final List<dynamic> list = json.decode(rawInput);
+        final prefix = q.questionType == 'dynamic_match' ? '예시' : '괄호';
+        return list.asMap().entries.map((e) => '[$prefix ${e.key + 1} 제출답안] ${e.value}').join('\n');
+      } catch (_) {}
+    }
+    return rawInput;
   }
 
   @override
@@ -138,8 +166,8 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
                 ),
               if (quizState.isSubmitted) ...[
                 DiffResultWidget(
-                  officialAnswer: currentQuestion.answer,
-                  userAnswer: quizState.currentInputText,
+                  officialAnswer: _buildOfficialAnswer(currentQuestion),
+                  userAnswer: _buildUserAnswer(currentQuestion, quizState.currentInputText),
                   matchScore: quizState.matchScore,
                   keywords: currentQuestion.keywords,
                   isDarkMode: isDark,
