@@ -20,7 +20,20 @@ class UpdateCheckerService {
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         final String latestVersion = (data['tag_name'] as String? ?? '').replaceAll('v', '');
-        final String downloadUrl = data['html_url'] as String? ?? 'https://github.com/$githubRepo/releases';
+        
+        String downloadUrl = data['html_url'] as String? ?? 'https://github.com/$githubRepo/releases';
+        
+        // assets 배열에서 apk 파일의 직접 다운로드 링크(browser_download_url) 우선 탐색
+        final List<dynamic>? assets = data['assets'] as List<dynamic>?;
+        if (assets != null && assets.isNotEmpty) {
+          for (final asset in assets) {
+            final String? name = asset['name'] as String?;
+            if (name != null && name.toLowerCase().endsWith('.apk')) {
+              downloadUrl = asset['browser_download_url'] as String? ?? downloadUrl;
+              break;
+            }
+          }
+        }
 
         // 현재 앱의 설치 버전 (package_info_plus를 통해 동적 로드)
         final packageInfo = await PackageInfo.fromPlatform();
