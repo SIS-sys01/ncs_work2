@@ -14,7 +14,7 @@ class DatabaseHelper {
 
   Future<Database> get database async {
     if (_database != null) return _database!;
-    _database = await _initDB('vocational_counselor2_v27.db');
+    _database = await _initDB('vocational_counselor2_v28.db');
     return _database!;
   }
 
@@ -84,6 +84,9 @@ class DatabaseHelper {
       // 주관식 문제 저장
       if (data['questions'] != null) {
         for (var q in data['questions']) {
+          final keywordData = q['keywords'];
+          final parsedKeywords = keywordData is List ? keywordData.join(',') : (keywordData ?? '');
+
           batch.insert('questions', {
             'id': q['id'],
             'subject_id': q['subject_id'],
@@ -92,7 +95,7 @@ class DatabaseHelper {
             'question_num': q['question_num'],
             'question': q['question'],
             'answer': q['answer'] ?? '',
-            'keywords': q['keywords'] ?? '',
+            'keywords': parsedKeywords,
             'explanation': q['explanation'] ?? '',
             'user_answer': null,
             'last_score': null,
