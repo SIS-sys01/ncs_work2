@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// 깃허브 Releases 기반 자동 업데이트 체크 서비스
@@ -21,8 +22,9 @@ class UpdateCheckerService {
         final String latestVersion = (data['tag_name'] as String? ?? '').replaceAll('v', '');
         final String downloadUrl = data['html_url'] as String? ?? 'https://github.com/$githubRepo/releases';
 
-        // 현재 앱의 설치 버전 (pubspec.yaml 버전 0.1.1 기준)
-        const currentVersion = '0.1.1';
+        // 현재 앱의 설치 버전 (package_info_plus를 통해 동적 로드)
+        final packageInfo = await PackageInfo.fromPlatform();
+        final String currentVersion = packageInfo.version;
 
         if (_isNewerVersion(currentVersion, latestVersion)) {
           if (!context.mounted) return;
