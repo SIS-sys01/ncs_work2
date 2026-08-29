@@ -166,7 +166,7 @@ class DatabaseHelper {
                batch.insert('questions', {
                  'id': questionId,
                  'subject_id': subjectId,
-                 'subject_name': subjectNames[subjectId] ?? '${subjectId}과목',
+                 'subject_name': subjectNames[subjectId] ?? '$subjectId과목',
                  'type': type,
                  'question_num': qNum,
                  'question': questionText,
