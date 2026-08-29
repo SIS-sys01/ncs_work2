@@ -16,7 +16,7 @@ class DatabaseHelper {
 
   Future<Database> get database async {
     if (_database != null) return _database!;
-    _database = await _initDB('vocational_counselor2_v34.db'); 
+    _database = await _initDB('vocational_counselor2_v35.db'); 
     return _database!;
   }
 
@@ -135,9 +135,9 @@ class DatabaseHelper {
             final String text = PdfTextExtractor(document).extractText();
             document.dispose();
 
-            // 파일 텍스트 전문에서 정답 분리 추적
-            // Q01. ... 정답: ... 키워드: ... 구조로 쪼갬
-            final qMatches = RegExp(r'(Q\d+\..*?)(?=Q\d+\.|$)', dotAll: true).allMatches(text);
+            // 파일 텍스트 전문에서 문항 단위 분리 추적
+            // Q앞에 붙어있는 네모칸 기호(예: ■ Q1)까지 100% 껴안아서 가져오도록 설계된 고급 결계 라인
+            final qMatches = RegExp(r'(?:^|\n)([^\n]*?Q\d+\..*?)(?=(?:^|\n)[^\n]*?Q\d+\.|$)', dotAll: true).allMatches(text);
             for (var match in qMatches) {
                String chunk = match.group(1) ?? '';
                
