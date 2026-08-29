@@ -16,7 +16,7 @@ class SubjectCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isAvailable = (subjectId == 1 || subjectId == 3);
+    final isAvailable = (subjectId == 1 || subjectId == 3 || subjectId == 4);
 
     return Card(
       shape: RoundedRectangleBorder(
@@ -80,7 +80,7 @@ class SubjectCard extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                (subjectId == 1 || subjectId == 3)
+                isAvailable
                     ? '내부평가 탑재'
                     : '추후 확장 예정',
                 style: theme.textTheme.bodySmall?.copyWith(
