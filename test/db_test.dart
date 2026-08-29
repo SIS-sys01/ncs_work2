@@ -45,10 +45,9 @@ void main() {
         }
         return q.copyWith(userAnswer: '');
       }).toList();
-      print("Parsed successfully. Count: \${freshQuestions.length}");
+      expect(freshQuestions.isNotEmpty, true);
     } catch(e, s) {
-      print("Error parsing: \$e");
-      print(s);
+      fail("Error parsing: \$e\\n\$s");
     }
   });
 }

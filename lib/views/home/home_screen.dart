@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:ncs_work/core/services/notice_service.dart';
 import 'package:ncs_work/core/services/update_checker_service.dart';
 import 'package:ncs_work/data/datasources/database_helper.dart';
@@ -20,9 +21,12 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
+  String _appVersion = '';
+
   @override
   void initState() {
     super.initState();
+    _loadVersion();
     // 화면 시작 직후 업데이트 공지 팝업 및 깃허브 최신 버전 체크 실행
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await NoticeService.checkVersionNotice(context);
@@ -30,6 +34,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         UpdateCheckerService.checkForUpdates(context);
       }
     });
+  }
+
+  Future<void> _loadVersion() async {
+    final info = await PackageInfo.fromPlatform();
+    if (mounted) {
+      setState(() {
+        _appVersion = 'v${info.version} (Build ${info.buildNumber})';
+      });
+    }
   }
 
   @override
@@ -113,6 +126,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       );
                     },
                   ),
+                  if (_appVersion.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 12.0),
+                      child: Text(
+                        '앱 시스템 구동 버전: $_appVersion',
+                        style: TextStyle(
+                          color: Colors.grey.shade500,
+                          fontSize: 12,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ),
                 ],
               );
             },
