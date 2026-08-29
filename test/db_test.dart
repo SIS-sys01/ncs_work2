@@ -46,7 +46,7 @@ void main() {
         return q.copyWith(userAnswer: '');
       }).toList();
       expect(freshQuestions.isNotEmpty, true);
-    } catch(e, s) {
+    } catch(e) {
       fail("Error parsing: \$e\\n\$s");
     }
   });
