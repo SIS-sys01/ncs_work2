@@ -16,7 +16,7 @@ class DatabaseHelper {
 
   Future<Database> get database async {
     if (_database != null) return _database!;
-    _database = await _initDB('vocational_counselor2_v35.db'); 
+    _database = await _initDB('vocational_counselor2_v36.db'); 
     return _database!;
   }
 
@@ -159,7 +159,15 @@ class DatabaseHelper {
                     answerText = chunk.substring(ansMatch.end).trim();
                  }
                } else {
-                 questionText = chunk.trim();
+                 // 폴백(Fallback): 정답 라벨이 아예 없는 3과목 같은 악조건 PDF 완벽 대응
+                 // 한국어 고유 질문 종결어미를 추적하여 질문과 해설을 완벽 분리
+                 final fallbackMatch = RegExp(r'(시오\.|시오\s*\n|까\?|\?\s*\n|다\.\s*\n|시오\s*$)').firstMatch(chunk);
+                 if (fallbackMatch != null) {
+                     questionText = chunk.substring(0, fallbackMatch.end).trim();
+                     answerText = chunk.substring(fallbackMatch.end).trim();
+                 } else {
+                     questionText = chunk.trim();
+                 }
                }
 
                final numMatch = RegExp(r'Q(\d+)\.').firstMatch(questionText);

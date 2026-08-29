@@ -6,8 +6,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 class NoticeService {
   static const String _keyLastSeenNoticeVersion = 'last_seen_notice_version';
 
-  /// 버전별 변경 및 추가 내역 공지 맵
+  /// 버전별 변경 및 단독 추가 내역 공지 맵
   static const Map<String, String> _versionReleaseNotes = {
+    '0.1.21': '''📢 v0.1.21 오토-파서 궁극의 B플랜 장착!
+
+미쳤습니다! 이제 앱이 인공지능처럼 선생님의 퀴즈 문맥을 파악합니다.
+만약 PDF 원본 문서에 [정답]이라는 안내선이 아예 안 적혀있더라도 끄떡없습니다. 앱이 인공지능처럼 퀴즈의 문맥을 읽어 한국어 특유의 종결 지점("~하시오.", "~무엇인가?")을 추적해낸 뒤 질문의 허리를 반으로 정확히 접어 정답을 스스로 도출해 내는 B플랜 알고리즘이 탑재되었습니다!! 어떠한 열악한 PDF 양식이라도 무조건 살려냅니다!''',
     '0.1.20': '''📢 v0.1.20 오토-파서 100% 한계 돌파!
 
 선생님의 매서운 피드백 덕분에 마침내 가장 완벽한 [PDF 인공지능 스캐너]를 완성했습니다.
