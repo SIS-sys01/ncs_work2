@@ -1,22 +1,32 @@
 import 'package:flutter/material.dart';
+import 'package:ncs_work/data/models/subject_model.dart';
 
 /// 메인 홈 화면의 개별 과목 카드 위젯 (Stateless)
 class SubjectCard extends StatelessWidget {
-  final int subjectId;
-  final String subjectName;
+  final SubjectModel subject;
   final VoidCallback onTap;
 
   const SubjectCard({
     super.key,
-    required this.subjectId,
-    required this.subjectName,
+    required this.subject,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isAvailable = (subjectId == 1 || subjectId == 3 || subjectId == 4);
+    final hasInternal = subject.internalCount > 0;
+    final hasExternal = subject.externalCount > 0;
+    final isAvailable = hasInternal || hasExternal;
+
+    String badgeText = '추후 확장 예정';
+    if (hasInternal && hasExternal) {
+      badgeText = '내/외부평가 탑재';
+    } else if (hasInternal) {
+      badgeText = '내부평가 탑재';
+    } else if (hasExternal) {
+      badgeText = '외부평가 탑재';
+    }
 
     return Card(
       shape: RoundedRectangleBorder(
@@ -45,7 +55,7 @@ class SubjectCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      '제$subjectId과목',
+                      '제\${subject.id}과목',
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
@@ -67,7 +77,7 @@ class SubjectCard extends StatelessWidget {
               Expanded(
                 child: Center(
                   child: Text(
-                    subjectName.replaceAll(RegExp(r'^\d+'), ''),
+                    subject.name.replaceAll(RegExp(r'^\d+'), ''),
                     style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                       height: 1.2,
@@ -80,9 +90,7 @@ class SubjectCard extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                isAvailable
-                    ? '내부평가 탑재'
-                    : '추후 확장 예정',
+                badgeText,
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: isAvailable ? Colors.greenAccent : theme.hintColor,
                   fontWeight: isAvailable ? FontWeight.bold : FontWeight.normal,

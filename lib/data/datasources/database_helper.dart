@@ -112,10 +112,18 @@ class DatabaseHelper {
     }
   }
 
-  /// 전체 과목 목록 조회 (1~12과목)
+  /// 전체 과목 목록 조회 (문제 수 집계 포함)
   Future<List<SubjectModel>> getSubjects() async {
     final db = await instance.database;
-    final result = await db.query('subjects', orderBy: 'id ASC');
+    final result = await db.rawQuery('''
+      SELECT s.id, s.name, 
+        SUM(CASE WHEN q.type = 'internal' THEN 1 ELSE 0 END) as internal_count,
+        SUM(CASE WHEN q.type = 'external' THEN 1 ELSE 0 END) as external_count
+      FROM subjects s
+      LEFT JOIN questions q ON s.id = q.subject_id
+      GROUP BY s.id
+      ORDER BY s.id ASC
+    ''');
     return result.map((json) => SubjectModel.fromMap(json)).toList();
   }
 

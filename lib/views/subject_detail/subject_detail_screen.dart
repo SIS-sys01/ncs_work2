@@ -50,25 +50,40 @@ class SubjectDetailScreen extends ConsumerWidget {
                 children: [
                   Expanded(
                     child: _PdfHelperButton(
-                      title: '내부평가 PDF 폴더',
-                      icon: Icons.picture_as_pdf_rounded,
-                      color: Colors.tealAccent,
-                      onTap: () => _showPdfDialog(context, subject.id, 'internal', subject.name),
+                      title: subject.internalCount > 0 ? '내부평가 PDF 폴더' : '내부평가 (닫힘)',
+                      icon: subject.internalCount > 0 ? Icons.picture_as_pdf_rounded : Icons.lock_outline_rounded,
+                      color: subject.internalCount > 0 ? Colors.tealAccent : Colors.grey,
+                      onTap: () {
+                        if (subject.internalCount == 0) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('\${subject.name} 내부평가 PDF는 현재 미탑재 상태입니다 (닫힘).'),
+                              duration: const Duration(seconds: 2),
+                            ),
+                          );
+                          return;
+                        }
+                        _showPdfDialog(context, subject.id, 'internal', subject.name);
+                      },
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: _PdfHelperButton(
-                      title: '외부평가 (닫힘)',
-                      icon: Icons.lock_outline_rounded,
-                      color: Colors.grey,
+                      title: subject.externalCount > 0 ? '외부평가 PDF 폴더' : '외부평가 (닫힘)',
+                      icon: subject.externalCount > 0 ? Icons.picture_as_pdf_rounded : Icons.lock_outline_rounded,
+                      color: subject.externalCount > 0 ? Colors.cyanAccent : Colors.grey,
                       onTap: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('${subject.name} 외부평가 항목은 현재 미탑재 상태입니다 (닫힘).'),
-                            duration: const Duration(seconds: 2),
-                          ),
-                        );
+                        if (subject.externalCount == 0) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('\${subject.name} 외부평가 PDF는 현재 미탑재 상태입니다 (닫힘).'),
+                              duration: const Duration(seconds: 2),
+                            ),
+                          );
+                          return;
+                        }
+                        _showPdfDialog(context, subject.id, 'external', subject.name);
                       },
                     ),
                   ),
@@ -77,12 +92,22 @@ class SubjectDetailScreen extends ConsumerWidget {
               const SizedBox(height: 20),
               Expanded(
                 child: _EvaluationOptionCard(
-                  title: '내부평가',
-                  subtitle: '${subject.name} 내부평가 100% 주관식 문제 (랜덤 10문항 셔플 출제)',
-                  icon: Icons.assignment_rounded,
-                  accentColor: Colors.tealAccent,
-                  isAvailable: true,
+                  title: subject.internalCount > 0 ? '내부평가' : '내부평가 (미탑재)',
+                  subtitle: subject.internalCount > 0 ? '${subject.name} 내부평가 100% 주관식 문제 (랜덤 10문항 셔플 출제)' : '${subject.name} 내부평가는 현재 미탑재 상태입니다.',
+                  icon: subject.internalCount > 0 ? Icons.assignment_rounded : Icons.lock_outline_rounded,
+                  accentColor: subject.internalCount > 0 ? Colors.tealAccent : Colors.grey,
+                  isAvailable: subject.internalCount > 0,
+                  badgeText: subject.internalCount > 0 ? '탑재됨' : '미탑재',
                   onTap: () {
+                    if (subject.internalCount == 0) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('${subject.name} 내부평가 항목은 현재 미탑재 상태입니다 (잠김).'),
+                          duration: const Duration(seconds: 2),
+                        ),
+                      );
+                      return;
+                    }
                     ref.read(quizProvider.notifier).loadQuestions(
                           subjectId: subject.id,
                           type: 'internal',
@@ -99,17 +124,30 @@ class SubjectDetailScreen extends ConsumerWidget {
               const SizedBox(height: 20),
               Expanded(
                 child: _EvaluationOptionCard(
-                  title: '외부평가 (현재 미탑재)',
-                  subtitle: '${subject.name} 외부평가 항목은 현재 미탑재 상태입니다.',
-                  icon: Icons.lock_outline_rounded,
-                  accentColor: Colors.grey,
-                  isAvailable: false,
-                  badgeText: '미탑재',
+                  title: subject.externalCount > 0 ? '외부평가' : '외부평가 (현재 미탑재)',
+                  subtitle: subject.externalCount > 0 ? '${subject.name} 외부평가 핵심 기출문제' : '${subject.name} 외부평가 항목은 현재 미탑재 상태입니다.',
+                  icon: subject.externalCount > 0 ? Icons.assignment_turned_in_rounded : Icons.lock_outline_rounded,
+                  accentColor: subject.externalCount > 0 ? Colors.cyanAccent : Colors.grey,
+                  isAvailable: subject.externalCount > 0,
+                  badgeText: subject.externalCount > 0 ? '탑재됨' : '미탑재',
                   onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('${subject.name} 외부평가 항목은 현재 미탑재 상태입니다 (닫힘).'),
-                        duration: const Duration(seconds: 2),
+                    if (subject.externalCount == 0) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('${subject.name} 외부평가 항목은 현재 미탑재 상태입니다 (닫힘).'),
+                          duration: const Duration(seconds: 2),
+                        ),
+                      );
+                      return;
+                    }
+                    ref.read(quizProvider.notifier).loadQuestions(
+                          subjectId: subject.id,
+                          type: 'external',
+                        );
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => QuizScreen(title: '${subject.name} - 외부평가'),
                       ),
                     );
                   },

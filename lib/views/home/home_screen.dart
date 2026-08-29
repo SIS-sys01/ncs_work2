@@ -102,8 +102,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       itemBuilder: (context, index) {
                         final subject = subjects[index];
                         return SubjectCard(
-                          subjectId: subject.id,
-                          subjectName: subject.name,
+                          subject: subject,
                           onTap: () {
                             Navigator.push(
                               context,
