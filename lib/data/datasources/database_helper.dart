@@ -16,7 +16,7 @@ class DatabaseHelper {
 
   Future<Database> get database async {
     if (_database != null) return _database!;
-    _database = await _initDB('vocational_counselor2_v33.db'); // DB 버전을 33으로 강제 승격하여 정규식 재파싱
+    _database = await _initDB('vocational_counselor2_v34.db'); 
     return _database!;
   }
 
@@ -83,7 +83,10 @@ class DatabaseHelper {
         }
       }
 
-      // 주관식 문제 저장
+      // 1. PDF 원문 파서가 가장 먼저 뼈대 데이터(모든 과목)를 백지 상태에서 깔아둠
+      await _parsePdfsAndInsert(batch);
+
+      // 2. 관리자가 직접 정성을 들여 만든 수제작 문항들(JSON: 셔플, 빈칸 등)이 그 위를 강력하게 덮어씀 (우선순위 1위)
       if (data['questions'] != null) {
         for (var q in data['questions']) {
           final keywordData = q['keywords'];
@@ -107,8 +110,6 @@ class DatabaseHelper {
           }, conflictAlgorithm: ConflictAlgorithm.replace);
         }
       }
-
-      await _parsePdfsAndInsert(batch);
 
       await batch.commit(noResult: true);
     } catch (e) {
