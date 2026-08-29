@@ -57,7 +57,7 @@ class SubjectDetailScreen extends ConsumerWidget {
                         if (subject.internalCount == 0) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              content: Text('\${subject.name} 내부평가 PDF는 현재 미탑재 상태입니다 (닫힘).'),
+                              content: Text('${subject.name} 내부평가 PDF는 현재 미탑재 상태입니다 (닫힘).'),
                               duration: const Duration(seconds: 2),
                             ),
                           );
@@ -77,7 +77,7 @@ class SubjectDetailScreen extends ConsumerWidget {
                         if (subject.externalCount == 0) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              content: Text('\${subject.name} 외부평가 PDF는 현재 미탑재 상태입니다 (닫힘).'),
+                              content: Text('${subject.name} 외부평가 PDF는 현재 미탑재 상태입니다 (닫힘).'),
                               duration: const Duration(seconds: 2),
                             ),
                           );

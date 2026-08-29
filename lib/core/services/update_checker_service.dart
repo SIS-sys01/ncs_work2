@@ -184,7 +184,7 @@ class _UpdateDialogState extends State<_UpdateDialog> {
               ],
             )
           : Text(
-              '새로운 버전(v\${widget.latestVersion})이 출시되었습니다!\\n지금 최신 버전으로 업데이트하시겠습니까?',
+              '새로운 버전(v${widget.latestVersion})이 출시되었습니다!\n지금 최신 버전으로 업데이트하시겠습니까?',
               style: const TextStyle(fontSize: 14, height: 1.5),
             ),
       actions: _isDownloading

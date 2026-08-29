@@ -1,9 +1,11 @@
 import 'dart:convert';
 import 'package:flutter/services.dart';
+import 'package:ncs_work/core/utils/question_pdf_service.dart';
 import 'package:ncs_work/data/models/question_model.dart';
 import 'package:ncs_work/data/models/subject_model.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:syncfusion_flutter_pdf/pdf.dart';
 
 /// 오프라인 SQLite 데이터베이스 제어 헬퍼
 class DatabaseHelper {
@@ -14,7 +16,7 @@ class DatabaseHelper {
 
   Future<Database> get database async {
     if (_database != null) return _database!;
-    _database = await _initDB('vocational_counselor2_v30.db');
+    _database = await _initDB('vocational_counselor2_v31.db');
     return _database!;
   }
 
@@ -106,9 +108,83 @@ class DatabaseHelper {
         }
       }
 
+      await _parsePdfsAndInsert(batch);
+
       await batch.commit(noResult: true);
     } catch (e) {
       // 로깅
+    }
+  }
+
+  /// PDF 폴더의 문서를 자체 분석하여 자동으로 문제 데이터베이스를 추출해 쌓아두는 완전 자동화 엔진
+  Future<void> _parsePdfsAndInsert(Batch batch) async {
+    final Map<int, String> subjectNames = {
+      1: '1직업상담 초기면담', 2: '2직업상담진단', 3: '3직업훈련상담', 4: '4직업상담행정',
+      5: '5진로상담', 6: '6직업정보수집', 7: '7취업상담', 8: '8직업정보제공',
+      9: '9직업복귀상담', 10: '10집단상담프로그램 운영', 11: '11취업지원 행사운영', 12: '12직업상담서비스 협업체계구축'
+    };
+
+    for (int subjectId = 1; subjectId <= 12; subjectId++) {
+      for (String type in ['internal', 'external']) {
+        final pdfAssets = await QuestionPdfService.getPdfAssets(subjectId: subjectId, type: type);
+        for (String pdfPath in pdfAssets) {
+          try {
+            final ByteData data = await rootBundle.load(pdfPath);
+            final PdfDocument document = PdfDocument(inputBytes: data.buffer.asUint8List());
+            final String text = PdfTextExtractor(document).extractText();
+            document.dispose();
+
+            // 파일 텍스트 전문에서 정답 분리 추적
+            // Q01. ... 정답: ... 키워드: ... 구조로 쪼갬
+            final qMatches = RegExp(r'(Q\d+\..*?)(?=Q\d+\.|$)', dotAll: true).allMatches(text);
+            for (var match in qMatches) {
+               String chunk = match.group(1) ?? '';
+               
+               int ansIdx = chunk.indexOf('정답:');
+               String questionText = '';
+               String answerText = '';
+               String keywordText = '';
+
+               if (ansIdx != -1) {
+                 questionText = chunk.substring(0, ansIdx).trim();
+                 int kwdIdx = chunk.indexOf('키워드:', ansIdx);
+                 if (kwdIdx != -1) {
+                    answerText = chunk.substring(ansIdx + 3, kwdIdx).trim();
+                    keywordText = chunk.substring(kwdIdx + 4).trim();
+                 } else {
+                    answerText = chunk.substring(ansIdx + 3).trim();
+                 }
+               } else {
+                 questionText = chunk.trim();
+               }
+
+               final numMatch = RegExp(r'Q(\d+)\.').firstMatch(questionText);
+               int qNum = numMatch != null ? int.tryParse(numMatch.group(1)!) ?? 0 : 0;
+               if (qNum == 0) continue;
+
+               final questionId = '${subjectId}_${type}_$qNum';
+               batch.insert('questions', {
+                 'id': questionId,
+                 'subject_id': subjectId,
+                 'subject_name': subjectNames[subjectId] ?? '${subjectId}과목',
+                 'type': type,
+                 'question_num': qNum,
+                 'question': questionText,
+                 'answer': answerText,
+                 'keywords': keywordText,
+                 'explanation': '',
+                 'user_answer': null,
+                 'last_score': null,
+                 'question_type': 'subjective',
+                 'dynamic_options': null,
+                 'cloze_text': null,
+               }, conflictAlgorithm: ConflictAlgorithm.replace);
+            }
+          } catch (e) {
+            // PDF 읽기 오류 무시 후 계속 진행
+          }
+        }
+      }
     }
   }
 

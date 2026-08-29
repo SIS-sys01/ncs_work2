@@ -55,7 +55,7 @@ class SubjectCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      '제\${subject.id}과목',
+                      '제${subject.id}과목',
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
