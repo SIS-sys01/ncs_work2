@@ -16,7 +16,7 @@ class DatabaseHelper {
 
   Future<Database> get database async {
     if (_database != null) return _database!;
-    _database = await _initDB('vocational_counselor2_v31.db');
+    _database = await _initDB('vocational_counselor2_v32.db'); // DB 버전을 32로 강제 승격하여 다시 파싱
     return _database!;
   }
 
@@ -140,19 +140,22 @@ class DatabaseHelper {
             for (var match in qMatches) {
                String chunk = match.group(1) ?? '';
                
-               int ansIdx = chunk.indexOf('정답:');
+               // 띄어쓰기나 괄호 대응을 위한 지능형 정규식 적용 (예: [정 답], 정답 :, 정답)
+               final ansMatch = RegExp(r'\[?\s*정\s*답\s*\]?\s*:?').firstMatch(chunk);
                String questionText = '';
                String answerText = '';
                String keywordText = '';
 
-               if (ansIdx != -1) {
+               if (ansMatch != null) {
+                 int ansIdx = ansMatch.start; // 지문이 끝나는 지점
                  questionText = chunk.substring(0, ansIdx).trim();
-                 int kwdIdx = chunk.indexOf('키워드:', ansIdx);
-                 if (kwdIdx != -1) {
-                    answerText = chunk.substring(ansIdx + 3, kwdIdx).trim();
-                    keywordText = chunk.substring(kwdIdx + 4).trim();
+                 
+                 final kwdMatch = RegExp(r'\[?\s*키\s*워\s*드\s*\]?\s*:?').firstMatch(chunk);
+                 if (kwdMatch != null && kwdMatch.start > ansMatch.end) {
+                    answerText = chunk.substring(ansMatch.end, kwdMatch.start).trim();
+                    keywordText = chunk.substring(kwdMatch.end).trim();
                  } else {
-                    answerText = chunk.substring(ansIdx + 3).trim();
+                    answerText = chunk.substring(ansMatch.end).trim();
                  }
                } else {
                  questionText = chunk.trim();
